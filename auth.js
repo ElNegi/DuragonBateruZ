@@ -1,0 +1,213 @@
+/* auth.js
+   -----------------------------------------------------------------------
+   Autenticación real con Firebase Auth (SDK modular — ver firebase-init.js).
+   Cargado como <script type="module">, así que puede usar `import`
+   directamente.
+
+   Soporta:
+   - Iniciar sesión con correo/contraseña.
+   - Crear cuenta con correo/contraseña (con confirmación de contraseña),
+     mediante la pestaña "Crear cuenta" del mismo formulario.
+   - Acceso rápido "Admin 1" / "Admin 2" arriba a la derecha, vía sesión
+     anónima de Firebase (sin contraseña, no persiste entre recargas).
+   - Checkbox "Mantener sesión iniciada": controla la persistencia real
+     de Firebase (browserLocalPersistence si está marcado —sobrevive a
+     cerrar el navegador—, browserSessionPersistence si no —solo dura
+     la pestaña actual—).
+   - Cierre de sesión real (signOut), disponible en el Menú Principal y
+     en el menú de la batalla.
+
+   `onAuthStateChanged` es la ÚNICA fuente de verdad sobre si hay sesión
+   activa: todo login (formulario, registro o acceso rápido) desemboca
+   ahí, y desde ahí se decide si se muestra el Menú Principal o se
+   limpia el estado y se vuelve al Login.
+
+   Expone `CURRENT_USER` en window (con `.uid` añadido), igual que antes.
+   NOTA: este sigue siendo el ÚNICO módulo que gestiona la autenticación
+   en todo el proyecto — ver el comentario en game.js sobre el bug de
+   doble-manejador que existía antes.
+*/
+import { auth } from "./firebase-init.js";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInAnonymously,
+  signOut,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
+} from "firebase/auth";
+
+(function(){
+
+  var modo = 'login'; // 'login' | 'register'
+  var yaResueltoInicial = false;
+
+  var MENSAJES_ERROR = {
+    'auth/invalid-email': 'El correo no es válido.',
+    'auth/user-disabled': 'Esta cuenta ha sido deshabilitada.',
+    'auth/user-not-found': 'No existe ninguna cuenta con ese correo.',
+    'auth/wrong-password': 'Contraseña incorrecta.',
+    'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+    'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
+    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+    'auth/too-many-requests': 'Demasiados intentos. Prueba de nuevo en unos minutos.',
+    'auth/network-request-failed': 'Error de conexión. Revisa tu red e inténtalo de nuevo.'
+  };
+
+  function init(){
+    var form = document.getElementById('loginForm');
+    if(form) form.addEventListener('submit', handleFormSubmit);
+
+    var tabLogin = document.getElementById('tabLogin');
+    if(tabLogin) tabLogin.addEventListener('click', function(){ setModo('login'); });
+
+    var tabRegister = document.getElementById('tabRegister');
+    if(tabRegister) tabRegister.addEventListener('click', function(){ setModo('register'); });
+
+    var quick1 = document.getElementById('quickAdmin1');
+    if(quick1) quick1.addEventListener('click', loginAnonimo);
+
+    var quick2 = document.getElementById('quickAdmin2');
+    if(quick2) quick2.addEventListener('click', loginAnonimo);
+
+    var logoutBtn = document.getElementById('logoutBtn');
+    if(logoutBtn) logoutBtn.addEventListener('click', logout);
+
+    var logoutBattleBtn = document.getElementById('logoutBattleBtn');
+    if(logoutBattleBtn) logoutBattleBtn.addEventListener('click', logout);
+
+    onAuthStateChanged(auth, handleAuthStateChanged);
+  }
+
+  // ------------------------------------------------------------------
+  // Alternar entre la pestaña "Iniciar sesión" y "Crear cuenta"
+  // ------------------------------------------------------------------
+  function setModo(nuevoModo){
+    modo = nuevoModo;
+    var tabLogin = document.getElementById('tabLogin');
+    var tabRegister = document.getElementById('tabRegister');
+    var confirmInput = document.getElementById('registerPassConfirm');
+    var submitBtn = document.getElementById('loginSubmitBtn');
+    var passInput = document.getElementById('loginPass');
+
+    if(tabLogin) tabLogin.classList.toggle('active', modo === 'login');
+    if(tabRegister) tabRegister.classList.toggle('active', modo === 'register');
+    if(confirmInput){
+      confirmInput.classList.toggle('hidden', modo !== 'register');
+      confirmInput.required = (modo === 'register');
+      if(modo !== 'register') confirmInput.value = '';
+    }
+    if(passInput) passInput.setAttribute('autocomplete', modo === 'register' ? 'new-password' : 'current-password');
+    if(submitBtn) submitBtn.textContent = modo === 'register' ? 'Crear cuenta' : 'Iniciar sesión';
+    ocultarError();
+  }
+
+  function mostrarError(mensaje){
+    var el = document.getElementById('authError');
+    if(!el) return;
+    el.textContent = mensaje;
+    el.classList.remove('hidden');
+  }
+
+  function ocultarError(){
+    var el = document.getElementById('authError');
+    if(!el) return;
+    el.classList.add('hidden');
+    el.textContent = '';
+  }
+
+  function handleFormSubmit(e){
+    if(e && typeof e.preventDefault === 'function'){
+      e.preventDefault();
+    }
+    ocultarError();
+
+    var emailInput = document.getElementById('loginUser');
+    var passInput = document.getElementById('loginPass');
+    var confirmInput = document.getElementById('registerPassConfirm');
+    var rememberInput = document.getElementById('rememberUser');
+
+    var email = (emailInput && emailInput.value.trim()) || '';
+    var pass = (passInput && passInput.value) || '';
+    var remember = !!(rememberInput && rememberInput.checked);
+
+    if(modo === 'register'){
+      var confirm = (confirmInput && confirmInput.value) || '';
+      if(pass !== confirm){
+        mostrarError('Las contraseñas no coinciden.');
+        return;
+      }
+    }
+
+    setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence)
+      .then(function(){
+        return modo === 'register'
+          ? createUserWithEmailAndPassword(auth, email, pass)
+          : signInWithEmailAndPassword(auth, email, pass);
+      })
+      .catch(function(err){
+        mostrarError(MENSAJES_ERROR[err.code] || 'No se pudo completar la operación. Inténtalo de nuevo.');
+      });
+  }
+
+  // Acceso rápido "Admin 1" / "Admin 2": sesión anónima de Firebase, sin
+  // contraseña y sin persistir entre recargas (pensado solo para pruebas).
+  function loginAnonimo(e){
+    if(e && typeof e.preventDefault === 'function'){
+      e.preventDefault();
+    }
+    ocultarError();
+    setPersistence(auth, browserSessionPersistence)
+      .then(function(){ return signInAnonymously(auth); })
+      .catch(function(err){
+        mostrarError(MENSAJES_ERROR[err.code] || 'No se pudo iniciar el acceso rápido.');
+      });
+  }
+
+  function logout(){
+    signOut(auth).catch(function(err){ console.error('Error al cerrar sesión:', err); });
+  }
+
+  // ------------------------------------------------------------------
+  // Única fuente de verdad sobre la sesión activa.
+  // ------------------------------------------------------------------
+  function handleAuthStateChanged(user){
+    if(user){
+      window.CURRENT_USER = window.CURRENT_USER || {};
+      window.CURRENT_USER.uid = user.uid;
+      window.CURRENT_USER.name = user.displayName
+        || (user.isAnonymous ? 'Invitado' : (user.email ? user.email.split('@')[0] : 'Jugador'));
+
+      var form = document.getElementById('loginForm');
+      if(form) form.reset();
+      ocultarError();
+
+      if(window.Game && typeof window.Game.showMainMenu === 'function'){
+        window.Game.showMainMenu();
+      } else {
+        window.setTimeout(function(){
+          if(window.Game && typeof window.Game.showMainMenu === 'function'){
+            window.Game.showMainMenu();
+          }
+        }, 0);
+      }
+    } else {
+      window.CURRENT_USER = null;
+      // Solo forzamos la limpieza del estado de partida si esto ocurre
+      // DESPUÉS de la resolución inicial (p. ej. tras un cierre de
+      // sesión explícito). En la carga inicial sin sesión no hay nada
+      // que limpiar: la pantalla de login ya está visible por defecto.
+      if(yaResueltoInicial && window.Game && typeof window.Game.resetJuego === 'function'){
+        window.Game.resetJuego('login');
+      }
+    }
+    yaResueltoInicial = true;
+  }
+
+  window.EcosAuth = { logout: logout };
+
+  document.addEventListener('DOMContentLoaded', init);
+
+})();
