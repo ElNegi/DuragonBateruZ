@@ -1,0 +1,60 @@
+# Auditoría de estabilidad — Ecos de Ki / DuragonBateruZ
+
+## Objetivo
+Esta versión parte del proyecto ampliado, pero restaura las partes sensibles del proyecto original que ya funcionaban (Firebase/Auth y contrato de datos base) y conserva las cartas y mecánicas nuevas únicamente donde pueden extender el juego sin sustituir la base.
+
+## Qué causó los fallos anteriores
+1. **Despliegue por archivos parciales.** Durante las iteraciones se sustituyeron `package.json` y `package-lock.json` por separado. Eso permitió que el repositorio acabara temporalmente con contenido incorrecto/no JSON y después con metadatos de npm desincronizados. La solución de esta entrega es volver a entregar el repositorio completo y coherente, no piezas sueltas.
+2. **Se modificó autenticación sin necesidad.** Las versiones intermedias cambiaron mucho `auth.js` y `firebase-init.js`, incluyendo fallback local y lógica extra de transición. Esta auditoría restaura el flujo de Firebase del proyecto original. `firebase-init.js` vuelve a ser byte por byte el original; `auth.js` conserva la lógica original y solo añade dos flags no invasivos y una función de diagnóstico.
+3. **Orden/ciclo de pantallas.** Con nuevas pantallas multijugador, el selector de pantalla de solitario podía dejar vistas antiguas visibles. Ahora el cambio de pantalla oculta primero todas las pantallas de ambos modos.
+4. **Identidad tras reiniciar expedición.** El reinicio del juego podía conservar solo el nombre y perder el `uid` Firebase. Ahora se conserva la identidad autenticada mientras se limpia únicamente el estado de la expedición.
+5. **Multijugador debe usar Firebase real.** Firestore exige `request.auth`. El acceso al modo multijugador ahora comprueba `window.firebaseAuth.currentUser`, no un flag local.
+
+## Base preservada
+- `public/data.js` es byte por byte el mismo archivo del proyecto original.
+- `firebase-init.js` es byte por byte el mismo archivo del proyecto original y apunta al mismo proyecto Firebase `dragonlike-3f51d`.
+- Las 32 cartas originales siguen en el catálogo base.
+- Se añaden 370 cartas nuevas sin sustituir el catálogo original: 402 cartas totales.
+- El combate conserva progresión de dados: ronda 1 = 1 dado, ronda 2 = 2, …, máximo 6 dados.
+
+## Validaciones automáticas incluidas
+`npm run validate` ejecuta antes del build:
+- estructura de archivos y JSON;
+- referencias de scripts de `index.html`;
+- IDs DOM usados por login/juego/multijugador;
+- catálogo completo (402 cartas / 370 añadidas);
+- resolución de las 370 cartas nuevas sin excepciones;
+- serialización segura para estado compartido;
+- reglas de balance y rareza;
+- sistema de resonancia, flujo, despertar, sagas y sincronía cooperativa;
+- login simulado mediante Firebase Auth;
+- transición login → menú;
+- selección de raza → mapa → combate;
+- uso de una carta importada en combate;
+- regla de dados 1→2→3→4→5→6;
+- generación repetida de mapas sin rutas muertas.
+
+## Despliegue Vercel
+Se incluye `vercel.json`:
+- Framework: Vite
+- Install: `npm install --no-audit --no-fund`
+- Build: `npm run build`
+- Output: `dist`
+
+`package.json` fija las versiones que ya resuelve el lockfile:
+- Firebase 10.14.1
+- Vite 5.4.21
+- Node 20.x
+
+El `prebuild` ejecuta automáticamente la auditoría antes de compilar. Si una regresión estructural rompe login, pantallas, cartas o datos básicos, el despliegue falla antes de publicar.
+
+## Configuración externa que el código NO puede verificar
+Aunque el código esté correcto, Firebase Console y Vercel son servicios externos. Antes de producción hay que confirmar:
+1. Firebase Authentication → Email/Password habilitado.
+2. Firebase Authentication → Anonymous habilitado si se quieren usar Admin 1/Admin 2 como cuentas Firebase reales.
+3. Firebase Authentication → Authorized domains contiene el dominio de producción de Vercel.
+4. Firestore está creado y las reglas de `firestore.rules` están publicadas.
+5. En Vercel, Root Directory apunta a la raíz que contiene este `package.json`, `index.html` y `vercel.json`.
+
+## Forma recomendada de subir esta versión
+No mezclar archivos de versiones anteriores. Vaciar/reemplazar el contenido del repositorio con ESTA entrega, conservar `.git` si se trabaja localmente, hacer un commit nuevo y dejar que Vercel despliegue ese commit completo.

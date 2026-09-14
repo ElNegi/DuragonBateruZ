@@ -1,0 +1,57 @@
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const root=path.resolve(__dirname,'..');
+const html=fs.readFileSync(root+'/index.html','utf8');
+const ids=[...html.matchAll(/id=["']([^"']+)["']/g)].map(m=>m[1]);
+class CL{constructor(s=''){this.s=new Set((s||'').split(/\s+/).filter(Boolean));}add(...x){x.forEach(v=>this.s.add(v));}remove(...x){x.forEach(v=>this.s.delete(v));}toggle(v,f){if(f===undefined){if(this.s.has(v)){this.s.delete(v);return false;}this.s.add(v);return true;} if(f)this.s.add(v); else this.s.delete(v); return !!f;}contains(v){return this.s.has(v);}}
+class El{constructor(id=''){this.id=id;this.classList=new CL();this.style={};this.dataset={};this.children=[];this.textContent='';this.innerHTML='';this.value='';this.checked=true;this.disabled=false;this.required=false;this.listeners={};this.attributes={};}
+ appendChild(e){this.children.push(e);return e;} addEventListener(t,cb){(this.listeners[t]||(this.listeners[t]=[])).push(cb);} setAttribute(k,v){this.attributes[k]=String(v);} removeAttribute(k){delete this.attributes[k];} click(){(this.listeners.click||[]).forEach(f=>f({preventDefault(){}}));}}
+const els={};ids.forEach(id=>els[id]=new El(id));
+// initialize hidden classes from HTML tags
+for(const m of html.matchAll(/<[^>]*id=["']([^"']+)["'][^>]*class=["']([^"']*)["'][^>]*>/g)){if(els[m[1]])els[m[1]].classList=new CL(m[2]);}
+const domReady=[];
+const document={
+ getElementById(id){return els[id]||null;},
+ createElement(tag){return new El();},
+ addEventListener(t,cb){if(t==='DOMContentLoaded')domReady.push(cb);},
+ querySelector(sel){if(sel==='#modeExpedicion .mode-desc') return new El(); return null;},
+ querySelectorAll(sel){if(sel==='.screen') return ids.filter(id=>/Screen$/.test(id)||id==='gameScreen').map(id=>els[id]); return [];},
+ readyState:'loading'
+};
+const timers=[];
+const sandbox={window:{},document,console,Math,JSON,Date,Number,String,Array,Object,RegExp,Error,isFinite,parseInt,parseFloat, setTimeout:(fn,ms)=>{timers.push(fn);return timers.length;},clearTimeout(){},alert:()=>{}};
+sandbox.window.window=sandbox.window;sandbox.window.document=document;sandbox.window.setTimeout=sandbox.setTimeout;sandbox.window.clearTimeout=sandbox.clearTimeout;sandbox.window.location={hostname:'localhost',origin:'http://localhost'};
+vm.createContext(sandbox);
+for(const f of ['public/data.js','public/catalog-cards.js','public/balance-system.js','public/engagement-system.js','public/card-engine.js','public/map.js','public/game.js']){
+  vm.runInContext(fs.readFileSync(root+'/'+f,'utf8'),sandbox,{filename:f});
+}
+for(const cb of domReady)cb();
+const W=sandbox.window,G=W.Game;
+if(!G)throw new Error('window.Game missing');
+W.CURRENT_USER={uid:'test-uid',name:'Tester',firebaseAuthenticated:true};
+G.showMainMenu();
+if(els.menuScreen.classList.contains('hidden'))throw new Error('menu did not open');
+G.startExpedicion();
+if(els.raceScreen.classList.contains('hidden'))throw new Error('race screen did not open');
+G.selectRace('Saiyan');
+if(!W.CURRENT_USER.activeDeck||W.CURRENT_USER.activeDeck.length!==8)throw new Error('starter deck not 8');
+if(!G.mapNodes.length)throw new Error('map not generated');
+if(els.mapScreen.classList.contains('hidden'))throw new Error('map screen not open');
+let idx=-1;
+for(let guard=0;guard<12;guard++){ idx=G.mapNodes.findIndex(n=>n.estado==='disponible'&&['Combate','Elite','Jefe'].includes(n.tipo)); if(idx>=0)break; const avail=G.mapNodes.findIndex(n=>n.estado==='disponible'); if(avail<0)break; W.completarNodoMapa(G.mapNodes,avail); }
+if(idx<0)throw new Error('no reachable combat node');
+G.onNodeClick(idx);
+if(!G.combateActivo||!G.jugador||!G.enemigo)throw new Error('combat not started');
+if(G.round!==1||G.jugador.diceCount!==1||G.jugador.dice.length!==1)throw new Error('round1 dice wrong '+G.round+'/'+G.jugador.diceCount+'/'+G.jugador.dice.length);
+// End first turn and validate round2 dice
+G.endAction();
+if(G.combateActivo){
+ if(G.round!==2)throw new Error('round did not advance to 2: '+G.round);
+ if(G.jugador.health>0 && (G.jugador.diceCount!==2||G.jugador.dice.length!==2))throw new Error('round2 dice wrong '+G.jugador.diceCount+'/'+G.jugador.dice.length);
+}
+// Directly test a known imported card in an isolated fresh combat to avoid random affordability.
+G.iniciarPartida({name:'Dummy',race:'Freezer',health:100,pattern:[{tipo:'ataque',valor:1}]});
+const k=W.FULL_CARD_CATALOG.find(c=>c.nombre==='Ki Blast');
+G.jugador.hand=[JSON.parse(JSON.stringify(k))];G.jugador.energy=10;G.renderHand();
+G.jugarCarta(G.jugador.hand[0],null);
+if(G.enemigo.health>=100)throw new Error('imported attack did not damage enemy');
+console.log(JSON.stringify({ok:true,cards:Object.values(W.CARD_POOL).flat().length,mapNodes:G.mapNodes.length,firstCombatIndex:idx,screen:'battle',enemyAfterKiBlast:G.enemigo.health},null,2));

@@ -1,0 +1,22 @@
+{
+  "name": "ecos-de-ki",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "npm run validate",
+    "build": "vite build",
+    "preview": "vite preview",
+    "validate": "node scripts/preflight.cjs && node scripts/validate-balance.cjs && node scripts/validate-engagement.cjs && node scripts/auth-smoke.cjs && node scripts/ui-smoke.cjs && node scripts/round-smoke.cjs && node scripts/serialization-smoke.cjs"
+  },
+  "dependencies": {
+    "firebase": "10.14.1"
+  },
+  "devDependencies": {
+    "vite": "5.4.21"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

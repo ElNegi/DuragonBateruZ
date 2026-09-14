@@ -1,0 +1,31 @@
+VALIDACIÓN — ECOS DE KI / SISTEMAS DINÁMICOS
+============================================
+
+Regla base protegida:
+- Ronda 1: 1 dado
+- Ronda 2: 2 dados
+- Ronda 3: 3 dados
+- Ronda 4: 4 dados
+- Ronda 5: 5 dados
+- Ronda 6+: 6 dados máximo
+
+Pruebas automáticas:
+- 402 cartas totales: OK
+- 370 cartas ampliadas resuelven sin error: OK
+- Restricciones de ronda/rareza: OK
+- Resonancia de dados: OK
+- Flujo de combate: OK
+- Despertar racial: OK
+- Modificadores de Saga: OK
+- Resistencias de Estados de jefes: OK
+- Cartas originales usan coste/Estados modernos: OK
+- Mapa de 35 nodos: OK
+- 3 bifurcaciones reales (6 nodos de ruta): OK
+- Jefes con fases: OK
+- HUD nuevo presente: OK
+- Sincronía cooperativa y Compartir Ki presentes: OK
+- Sintaxis JS principal: OK
+
+Build Vite en este entorno:
+NO ejecutable por incompatibilidad de binario nativo de Rollup incluido en node_modules (Windows vs Linux).
+Los archivos fuente han sido validados con node --check y scripts de prueba.
