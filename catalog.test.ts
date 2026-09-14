@@ -1,0 +1,2 @@
+import type { Die } from '../../core/DiceSystem';import { spentKi,totalKi } from '../../core/DiceSystem';
+export function DiceBar({dice}:{dice:Die[]}){return <div className="dice-panel"><div className="dice-row">{dice.map(d=><span key={d.id} className={`die ${d.spent?'spent':''}`}>{d.value}</span>)}</div><div className="ki-readout"><span>Ki restante <b>{totalKi(dice)}</b></span><span>Ki gastado <b>{spentKi(dice)}</b></span></div></div>}

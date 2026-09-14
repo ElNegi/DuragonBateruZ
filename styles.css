@@ -1,0 +1,1 @@
+export const priceForCard=(cost:number,rarity:string|null)=>Math.max(20,cost*15+({COMUN:0,POCO_COMUN:10,RARA:25,EPICA:45,LEGENDARIA:70}[rarity??'COMUN']??0));

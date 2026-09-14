@@ -1,0 +1,19 @@
+import type { GameState, PlayerState } from './GameState';
+import { rollDice } from './DiceSystem';
+import { drawCards } from '../cards/CardEngine';
+import { GAME_RULES } from './gameRules';
+export function startRound(state:GameState,rng:()=>number=Math.random):GameState{
+ const round=state.round; const players=state.players.map(p=>{
+   let next={...p,dice:rollDice(round,rng),passed:false};
+   next=drawCards(next,GAME_RULES.cardsDrawnPerRound,rng);
+   return next;
+ });
+ return {...state,players,phase:'ACTIONS',activeCombatantIndex:0,log:[...state.log,`Ronda ${round}: dados lanzados y ${GAME_RULES.cardsDrawnPerRound} cartas robadas.`]};
+}
+export function passAction(state:GameState,playerId:string):GameState{
+ const players=state.players.map(p=>p.id===playerId?{...p,passed:true}:p);
+ if(players.every(p=>p.passed)) return {...state,players,phase:'ROUND_END'};
+ let idx=state.activeCombatantIndex; for(let i=0;i<players.length;i++){idx=(idx+1)%players.length;if(!players[idx].passed)break;}
+ return {...state,players,activeCombatantIndex:idx};
+}
+export function nextRound(state:GameState):GameState{return {...state,round:state.round+1,phase:'ROUND_START',players:state.players.map(p=>({...p,passed:false}))};}
