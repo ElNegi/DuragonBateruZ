@@ -1,0 +1,17 @@
+{
+  "name": "ecos-de-ki",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "validate:cards": "node scripts/validateCards.mjs",
+    "import:cards": "python scripts/import_cards.py",
+    "generate:catalog": "python scripts/generate_catalog.py",
+    "smoke": "vite --host 127.0.0.1"
+  },
+  "dependencies": { "@vitejs/plugin-react": "latest", "firebase": "latest", "react": "latest", "react-dom": "latest", "react-router-dom": "latest", "zod": "latest" },
+  "devDependencies": { "@types/react": "latest", "@types/react-dom": "latest", "@types/node": "latest", "typescript": "latest", "tsx": "latest", "vite": "latest", "vitest": "latest", "jsdom": "latest" }
+}

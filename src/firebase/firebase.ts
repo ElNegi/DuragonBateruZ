@@ -1,0 +1,2 @@
+import {initializeApp,getApps} from 'firebase/app'; import {getAuth} from 'firebase/auth'; import {getFirestore} from 'firebase/firestore';
+const config={apiKey:'AIzaSyBefHo9p2GBLEM4Xxw_VfOlslvvCP9d_-w',authDomain:'dragonlike-3f51d.firebaseapp.com',projectId:'dragonlike-3f51d',storageBucket:'dragonlike-3f51d.firebasestorage.app',messagingSenderId:'1043327320401',appId:'1:1043327320401:web:b31617d1452d410f45d370'}; const app=getApps()[0]??initializeApp(config); export const auth=getAuth(app);export const db=getFirestore(app);

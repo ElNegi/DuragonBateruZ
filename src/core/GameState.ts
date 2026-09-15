@@ -1,0 +1,5 @@
+import type {Card} from '../cards/cardTypes'; import {GAME_RULES} from './gameRules';
+export type Status={id:string,name:string,duration:number,stacks:number}; export type Combatant={id:string;name:string;race:'SAIYAN'|'NAMEK'|'FREEZER';hp:number;maxHp:number;deck:Card[];hand:Card[];discardPile:Card[];exile:Card[];permanents:Card[];statuses:Status[];dice:number[];kiSpent:number;actionHistory:string[];awakeningMeter:number;transformedUntil?:number;isEnemy?:boolean};
+export type GameState={round:number;combatants:Combatant[];activeIndex:number;passed:string[];log:string[];scenario?:Card;saga?:Card};
+export const makeCombatant=(id:string,name:string,race:Combatant['race'],deck:Card[],enemy=false):Combatant=>({id,name,race,hp:GAME_RULES.startingHp,maxHp:GAME_RULES.startingHp,deck:[...deck],hand:[],discardPile:[],exile:[],permanents:[],statuses:[],dice:[],kiSpent:0,actionHistory:[],awakeningMeter:0,isEnemy:enemy});
+export const serializeGameState=(s:GameState)=>JSON.parse(JSON.stringify(s)); export const deserializeGameState=(s:GameState)=>s;

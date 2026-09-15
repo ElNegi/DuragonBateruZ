@@ -1,0 +1,2 @@
+import {doc,getDoc,setDoc} from 'firebase/firestore'; import {db} from './firebase'; import type {GameState} from '../core/GameState'; import {serializeGameState,deserializeGameState} from '../core/GameState';
+export const saveRun=async(uid:string,id:string,state:GameState)=>setDoc(doc(db,'users',uid,'runs',id),serializeGameState(state)); export const loadRun=async(uid:string,id:string)=>{const x=await getDoc(doc(db,'users',uid,'runs',id));return x.exists()?deserializeGameState(x.data() as GameState):null};

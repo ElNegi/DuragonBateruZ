@@ -1,0 +1,1 @@
+import type {Combatant} from '../core/GameState'; export type Intent='ATTACK'|'DEFEND'|'CHARGE'|'HEAL'; export const chooseIntent=(enemy:Combatant):Intent=>enemy.hp<enemy.maxHp*.3?'HEAL':enemy.dice.includes(6)?'ATTACK':'CHARGE';

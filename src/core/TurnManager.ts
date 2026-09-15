@@ -1,0 +1,4 @@
+import type {Combatant,GameState} from './GameState'; import {rollDice} from './DiceSystem'; import {GAME_RULES} from './gameRules';
+export const draw=(c:Combatant,n:number)=>{for(let i=0;i<n;i++){if(!c.deck.length&&c.discardPile.length)c.deck.push(...c.discardPile.splice(0));const x=c.deck.shift();if(x)c.hand.push(x)}};
+export const startRound=(s:GameState,rng=Math.random)=>{s.combatants.forEach(c=>{c.dice=rollDice(s.round,rng);c.kiSpent=0;draw(c,GAME_RULES.roundDraw);c.statuses.forEach(x=>x.duration--);c.statuses=c.statuses.filter(x=>x.duration>0)});s.passed=[];return s};
+export const pass=(s:GameState,id:string)=>{if(!s.passed.includes(id))s.passed.push(id);if(s.passed.length>=s.combatants.filter(c=>c.hp>0).length){s.round++;startRound(s)}else s.activeIndex=(s.activeIndex+1)%s.combatants.length;return s};

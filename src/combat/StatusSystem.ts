@@ -1,0 +1,1 @@
+import type {Combatant,Status} from '../core/GameState'; export const applyStatus=(c:Combatant,s:Status)=>{const x=c.statuses.find(v=>v.id===s.id);if(x){x.stacks+=s.stacks;x.duration=Math.max(x.duration,s.duration)}else c.statuses.push(s)}; export const statusDamageModifier=(c:Combatant)=>c.statuses.some(x=>x.id==='debilitado')?-2:0;

@@ -1,0 +1,3 @@
+export const CARD_TYPES=['ATAQUE','DEFENSA','RECUPERACION','TECNICA','HABILIDAD','COMBO','MISION','SAGA','ESCENARIO','EQUIPAMIENTO','ALIADO','EVENTO','REACCION','ESTADO','RACIAL','PODER'] as const;
+export type CardType=typeof CARD_TYPES[number]; export type Nature='FISICO'|'KI'; export type Range='CERCANIA'|'DISTANCIA';
+export type Card={id:string;name:string;cardType:CardType;sourceType:string;cost:number;rarity:'COMUN'|'POCO_COMUN'|'RARA'|'EPICA'|'LEGENDARIA';raceRestriction?:'SAIYAN'|'NAMEK'|'FREEZER';nature?:Nature;range?:Range;damage?:number;rulesText:string;conditions:string;targeting:string;duration:string;keywords:string[];structuredEffects:{type:string;amount?:number;params?:Record<string,unknown>}[]};

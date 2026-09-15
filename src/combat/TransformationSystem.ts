@@ -1,0 +1,1 @@
+import type {Combatant} from '../core/GameState'; export const gainAwakening=(c:Combatant,n:number)=>c.awakeningMeter=Math.min(100,c.awakeningMeter+n); export const transform=(c:Combatant,round:number)=>{if(c.awakeningMeter<100)return false;c.awakeningMeter=0;c.transformedUntil=round+2;return true};
