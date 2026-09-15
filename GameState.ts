@@ -1,1 +1,0 @@
-import { test,expect } from '@playwright/test';test('app carga sin crash antes de auth',async({page})=>{await page.goto('/');await expect(page.locator('body')).toContainText(/ECOS DE KI|Comprobando sesión/);});

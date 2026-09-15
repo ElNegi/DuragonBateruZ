@@ -1,5 +1,0 @@
-import { z } from 'zod';
-export const cardSchema=z.object({
- id:z.string().min(1),sourceIndex:z.number().int().positive(),name:z.string().min(1),cardType:z.enum(['ATAQUE','DEFENSA','RECUPERACION','TECNICA','HABILIDAD','COMBO','MISION','SAGA','ESCENARIO','EQUIPAMIENTO','ALIADO','EVENTO','REACCION','ESTADO','RACIAL','PODER']),sourceType:z.string(),cost:z.number().int().min(0),
- rarity:z.enum(['COMUN','POCO_COMUN','RARA','EPICA','LEGENDARIA']).nullable(),raceRestriction:z.enum(['SAIYAN','NAMEK','FREEZER']).nullable(),nature:z.enum(['FISICO','KI']).nullable(),range:z.enum(['CERCANIA','DISTANCIA']).nullable(),damage:z.number().nullable(),rulesText:z.string().min(1),conditions:z.array(z.string()),targeting:z.string(),duration:z.string().nullable(),keywords:z.array(z.string()),structuredEffects:z.array(z.object({type:z.string(),amount:z.number().optional(),target:z.string().optional(),zone:z.string().optional(),text:z.string().optional()})),upgrade:z.any().nullable(),source:z.object({document:z.string(),tableIndex:z.number(),rowIndex:z.number()})
-});

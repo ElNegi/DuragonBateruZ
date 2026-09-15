@@ -1,2 +1,0 @@
-import type { EnemyState } from '../core/GameState';
-export function chooseEnemyIntent(enemy:EnemyState,round:number){const low=enemy.hp/enemy.maxHp<.35;if(enemy.archetype==='SANADOR'&&low)return 'CURAR';if(enemy.archetype==='DEFENSIVO'&&round%2===0)return 'DEFENDER';if(enemy.archetype==='CARGADOR'&&round%3===0)return 'ATAQUE_CARGADO';return low&&enemy.archetype==='BERSERKER'?'ATAQUE_BRUTAL':'ATAQUE';}

@@ -1,2 +1,0 @@
-import cards from '../../cards/cards.json';import type { Card } from '../../cards/cardTypes';import { CardView } from '../components/CardView';
-export function DeckScreen(){return <main className="screen"><div className="screen-head"><div><span className="eyebrow">CATÁLOGO</span><h2>370 cartas</h2></div></div><div className="catalog-grid">{(cards as Card[]).slice(0,36).map(c=><CardView key={c.id} card={c}/>)}</div><p className="muted">Vista optimizada: se muestran 36 cartas; el JSON incluye las 370 cartas del catálogo fuente.</p></main>}

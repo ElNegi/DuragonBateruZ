@@ -1,3 +1,0 @@
-export type NodeType='COMBATE'|'ELITE'|'JEFE'|'EVENTO'|'TIENDA'|'DESCANSO'|'ENTRENAMIENTO'|'TESORO'|'MISION';
-export type MapNode={id:string;floor:number;lane:number;type:NodeType;next:string[]};
-export function generateMap(seed=1,floors=8,lanes=3):MapNode[]{let x=seed>>>0;const rnd=()=>((x=(x*1664525+1013904223)>>>0)/2**32);const types:NodeType[]=['COMBATE','COMBATE','EVENTO','TIENDA','DESCANSO','ENTRENAMIENTO','TESORO','MISION','ELITE'];const nodes:MapNode[]=[];for(let f=0;f<floors;f++)for(let l=0;l<lanes;l++){const id=`f${f}l${l}`;const type=f===floors-1?'JEFE':types[Math.floor(rnd()*types.length)];const next=f===floors-1?[]:[l,Math.min(l+1,lanes-1)].filter((v,i,a)=>a.indexOf(v)===i).map(n=>`f${f+1}l${n}`);nodes.push({id,floor:f,lane:l,type,next});}return nodes;}
